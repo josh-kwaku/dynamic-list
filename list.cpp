@@ -44,6 +44,27 @@ public:
         }
     }
 
+    List(const List& other): _size{other.size()}, _capacity{other.capacity()} {
+        _data = std::make_unique<T[]>(_capacity);
+        // should prolly use iterators but for now, just a basic loop
+        for (list_size i = 0; i < _size; i++) {
+            *(_data.get() + i) = *(other._data.get() + i);
+        }
+    }
+
+    List &operator=(const List& other) {
+        if (this == &other) return *this;
+        _size = other.size();
+        _capacity = other.capacity();
+        _data.reset();
+        _data = std::make_unique<T[]>(_capacity);
+        // should prolly use iterators but for now, just a basic loop
+        for (list_size i = 0; i < _size; i++) {
+            *(_data.get() + i) = *(other._data.get() + i);
+        }
+        return *this;
+    }
+
     void append(T val) {
         if (_size == _capacity) resize();
         auto ptr = _data.get();
@@ -81,11 +102,16 @@ private:
     }
 };
 int main() {
-    List<int> list(10);
-    list.append(3);
-    list[0] = 20;
-    std::cout << list[0] << '\n';
-
-    List<std::string> strs = {"kwaku", "fritz", "george"};
-    std::cout << strs[0] << '\n';
+    List<int> list(10, 10);
+    // list.append(3);
+    // list[0] = 20;
+    // std::cout << list[0] << '\n';
+    //
+    // List<std::string> strs = {"kwaku", "fritz", "george"};
+    // std::cout << strs[0] << '\n';
+    List<int> test = {1, 2, 3};
+    test = list;
+    test[2] = 20;
+    std::cout << test[2] << '\n';
+    std::cout << list[2] << '\n';
 }
