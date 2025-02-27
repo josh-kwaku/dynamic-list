@@ -1,23 +1,76 @@
 //
 // Created by kwakujosh on 2/23/25.
 //
-// dynamically sized array
-// should automatically adjust its size if its getting full
-    // should multiply its size by 1.5 on adjustment
-// should be able to hold any type
-// should have random access using the [] operator
+// A dynamic array
 
 #include <iostream>
 #include <cmath>
 #include <memory>
 #include <cstring>
 #include <utility>
+#include <iterator>
+
+template <typename Container>
+class Iterator {
+public:
+    using iterator_category = std::random_access_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = typename Container::value_type;
+    using pointer = value_type*;
+    using reference = value_type&;
+
+    explicit Iterator(pointer ptr): _ptr{ptr} {}
+
+    reference operator*() const { return *_ptr; }
+
+    pointer operator->() const { return _ptr; }
+
+    // prefix
+    Iterator& operator++() {
+        _ptr++;
+        return *this;
+    }
+    // postfix
+    Iterator operator++(int) {
+        Iterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    // prefix
+    Iterator& operator--() {
+        _ptr--;
+        return *this;
+    }
+    // postfix
+    Iterator operator--(int) {
+        Iterator tmp = *this;
+        --(*this);
+        return tmp;
+    }
+
+    friend bool operator==(const Iterator& lhs, const Iterator& rhs) {
+        return lhs._ptr == rhs._ptr;
+    }
+
+    friend bool operator!=(const Iterator& lhs, const Iterator& rhs) {
+        return lhs._ptr != rhs._ptr;
+    }
+
+    friend bool operator<(const Iterator& lhs, const Iterator& rhs) {
+        return lhs._ptr < rhs._ptr;
+    }
+private:
+    pointer _ptr;
+};
 
 typedef unsigned long long list_size;
 
 template <typename T>
 class List {
 public:
+    using value_type = T;
+    using Iter = Iterator<List<T>>;
     List() {
         _data = std::make_unique<T>(_capacity);
     }
@@ -26,7 +79,7 @@ public:
         _data = std::make_unique<T[]>(_capacity);
     }
 
-    List(const list_size size, T val): _size{size}, _capacity{size} {
+    List(const list_size size, const T& val): _size{size}, _capacity{size} {
         _data = std::make_unique<T[]>(_capacity);
         auto ptr = _data.get();
         for (list_size i = 0; i < _capacity; i++) {
@@ -75,7 +128,7 @@ public:
         if (this == &other) return *this;
         _size = other.size();
         _capacity = other.capacity();
-        _data = std::move(other._data());
+        _data = std::move(other._data);
         other._size = 0;
         other._capacity = 0;
         return *this;
@@ -105,22 +158,46 @@ public:
         if (index >= _size) throw std::out_of_range("Provided index is out of range");
         return *(_data.get() + index);
     }
+
+    Iter begin() {
+        return Iter{_data.get()};
+    }
+
+    Iter end() {
+        return Iter{_data.get() + _size};
+    }
 private:
     list_size _size = 0;
     list_size _capacity = 2;
-    std::unique_ptr<T[]> _data; // T* _data = new T[]();
+    std::unique_ptr<T[]> _data;
 
     void resize() {
         const list_size new_capacity = _capacity << 1;
         auto new_data = std::make_unique<T[]>(new_capacity);
-        memcpy(new_data.get(), _data.get(), _size * sizeof(T));
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            memcpy(new_data.get(), _data.get(), _size * sizeof(T));
+        } else {
+            for (list_size i = 0; i < _size; i++) {
+                new_data[i] = std::move(_data[i]);
+            }
+        }
         _data = std::move(new_data);
+        _capacity = new_capacity;
     }
 };
 int main() {
-    List<int> list(10, 10);
-    List<int> g = std::move(list);
-    std::cout << g[0] << '\n';
+    List<std::string> list(10, "10");
+    List<std::string> g = {"jamie", "oliver", "twist"};
+    g.append("amy");
+    // std::cout << g[g.size() - 1] << " " << g.capacity() << '\n';
+
+    // for (auto s: g) {
+    //     std::cout << s << '\n';
+    // }
+    std::reverse(g.begin(), g.end());
+    for (auto it = g.begin(); it != g.end(); ++it) {
+        std::cout << *it << '\n';
+    }
     // list.append(3);
     // list[0] = 20;
     // std::cout << list[0] << '\n';
