@@ -71,11 +71,11 @@ class List {
 public:
     using value_type = T;
     using Iter = Iterator<List<T>>;
-    List() {
+    List(): _size{0}, _capacity {2} {
         _data = std::make_unique<T>(_capacity);
     }
 
-    explicit List(const list_size size): _capacity{size} {
+    explicit List(const list_size size): _size{0}, _capacity{size} {
         _data = std::make_unique<T[]>(_capacity);
     }
 
@@ -97,11 +97,12 @@ public:
         }
     }
 
-    List(const List& other): _size{other.size()}, _capacity{other.capacity()} {
+    List(List& other): _size{other.size()}, _capacity{other.capacity()} {
         _data = std::make_unique<T[]>(_capacity);
-        // should prolly use iterators. but for now, just a basic loop
-        for (list_size i = 0; i < _size; i++) {
-            *(_data.get() + i) = *(other._data.get() + i);
+        auto itr = this->begin();
+        for (auto& src: other) {
+            *itr = src;
+            ++itr;
         }
     }
 
@@ -111,15 +112,15 @@ public:
         other._capacity = 0;
     }
 
-    List &operator=(const List& other) {
+    List &operator=(List& other) {
         if (this == &other) return *this;
         _size = other.size();
         _capacity = other.capacity();
         _data.reset();
         _data = std::make_unique<T[]>(_capacity);
-        // should prolly use iterators. but for now, just a basic loop
-        for (list_size i = 0; i < _size; i++) {
-            *(_data.get() + i) = *(other._data.get() + i);
+        auto itr = this->begin();
+        for (auto& src: other) {
+            *itr = src;
         }
         return *this;
     }
@@ -188,13 +189,16 @@ private:
 int main() {
     List<std::string> list(10, "10");
     List<std::string> g = {"jamie", "oliver", "twist"};
-    g.append("amy");
+    List<std::string> h = g;
+    h = list;
+    // List<int> g = {1,2,4};
+    // List<int> h = g;
     // std::cout << g[g.size() - 1] << " " << g.capacity() << '\n';
 
     // for (auto s: g) {
     //     std::cout << s << '\n';
     // }
-    std::reverse(g.begin(), g.end());
+    std::reverse(h.begin(), h.end());
     for (auto it = g.begin(); it != g.end(); ++it) {
         std::cout << *it << '\n';
     }
